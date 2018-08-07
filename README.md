@@ -6,13 +6,13 @@ This repo contains all of the ETL scripts needed to update data for the wherewel
 Contents:
 
 
-- [Setting up the project database](#setting-up-the-project-database)
-- [Data](#data)
-	* [American Community Survey](#american-community-survey)
-- [Preparing data](#preparing-data)
-	* [collecting and adding data](#collecting-and-adding-data)
-- [Processing data](#processing-data)
-	* [processing and loading data](#processing-and-loading-data)
+- [Setting up the project database](https://bitbucket.org/caeser_uom/wwl-data/src/master/README.md#setting-up-the-project-database)
+- [Data](https://bitbucket.org/caeser_uom/wwl-data/src/master/README.md#data)
+	* [American Community Survey](https://bitbucket.org/caeser_uom/wwl-data/src/master/README.md#american-community-survey)
+- [Preparing data](https://bitbucket.org/caeser_uom/wwl-data/src/master/README.md#preparing-data)
+	* [collecting and adding data](https://bitbucket.org/caeser_uom/wwl-data/src/master/README.md#collecting-and-adding-data)
+- [Processing data](https://bitbucket.org/caeser_uom/wwl-data/src/master/README.md#processing-data)
+	* [processing and loading data](https://bitbucket.org/caeser_uom/wwl-data/src/master/README.md#processing-and-loading-data)
 
 
 # Setting up the project database
