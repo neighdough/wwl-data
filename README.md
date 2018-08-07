@@ -5,20 +5,24 @@ This repo contains all of the ETL scripts needed to update data for the wherewel
 
 Contents:
 
-* Data
-	* American Community Survey (ACS)
+
+* [Setting up the project database]{#setup}
+* [Data]{#data}
+	* [American Community Survey (ACS)]{#acs}
 * Preparing data
 	* collecting and adding data
 * Processing data
 	* processing and loading data
 
 
+#Setting up project database {#setup}
+
 
 # Data
 
-## American Community Survey (ACS)
+## American Community Survey (ACS){#acs}
 
-All of the Census data used in WWL has been derived from the American Community Survey 5-year estimates. Data should be downloaded by from the [Census FTP site](https://www2.census.gov/programs-surveys/acs/summary_file/) for the year to be loaded using the *5_year_by_state* directory which contains a compressed copy of all sequence tables for each state. For each state, two zip files should be downloaded, *<StateName>_Tracts_Block_Groups_Only.zip* and *<StateName>_All_Geographies_Not_Tracts_Block_Groups.zip*. Current databases contain tables for Arkansas, Mississippi, Tennessee, and UnitedStates.
+All of the Census data used in WWL has been derived from the American Community Survey 5-year estimates. Data should be downloaded from the [Census FTP site](https://www2.census.gov/programs-surveys/acs/summary_file/) for the year to be loaded using the *5_year_by_state* directory which contains a compressed copy of all sequence tables for each state. For each state, two zip files should be downloaded, *<StateName>_Tracts_Block_Groups_Only.zip* and *<StateName>_All_Geographies_Not_Tracts_Block_Groups.zip*. Current databases contain tables for Arkansas, Mississippi, Tennessee, and UnitedStates.
 
 Once downloaded, the compressed file should be placed on Sharedworkspace under
 Data/Census/ACS/acs5yr_<YYYY>.
