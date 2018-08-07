@@ -6,21 +6,21 @@ This repo contains all of the ETL scripts needed to update data for the wherewel
 Contents:
 
 
-* [Setting up the project database]{#setup}
-* [Data]{#data}
-	* [American Community Survey (ACS)]{#acs}
-* Preparing data
-	* collecting and adding data
-* Processing data
-	* processing and loading data
+* [Setting up the project database](#setting-up-the-project-database)
+* [Data](#data)
+	* [American Community Survey (ACS)](#american-community-survey-(acs))
+* [Preparing data](#prepare)
+	* [collecting and adding data](#collecting)
+* [Processing data](#processing-data)
+	* [processing and loading data](#processing-and-loading-data)
 
 
-#Setting up project database {#setup}
+#Setting up project database
 
 
 # Data
 
-## American Community Survey (ACS){#acs}
+## American Community Survey (ACS)
 
 All of the Census data used in WWL has been derived from the American Community Survey 5-year estimates. Data should be downloaded from the [Census FTP site](https://www2.census.gov/programs-surveys/acs/summary_file/) for the year to be loaded using the *5_year_by_state* directory which contains a compressed copy of all sequence tables for each state. For each state, two zip files should be downloaded, *<StateName>_Tracts_Block_Groups_Only.zip* and *<StateName>_All_Geographies_Not_Tracts_Block_Groups.zip*. Current databases contain tables for Arkansas, Mississippi, Tennessee, and UnitedStates.
 
@@ -38,4 +38,8 @@ where YYYY is the 4-digit year of the ACS data being loaded. It may be necessary
 
 # Preparing data
 
+## collecting and adding data
+
 # Processing data
+
+## processing and loading data
