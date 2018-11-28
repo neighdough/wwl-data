@@ -1,0 +1,7 @@
+sqlalchemy
+pandas
+numpy
+docopt
+xlrd
+psycopg2
+
