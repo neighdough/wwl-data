@@ -1,25 +1,28 @@
-'''
+"""
 Created on Aug 10, 2015
 
-@author: nate
+This module contains all of the code and queries needed to process variables for 
+WhereWeLive. It is not intended to be run directly, but accessed through the 
+`process_data` method in wwldb.py
 
-'''
+"""
 
+__author__ = "Nate Ron-Ferguson"
 
 from collections import defaultdict
 import os
-from ld import postgres as pg
+import wwldb
 from caeser import utils
 from config import cnx_params
 
-cred = cnx_params.wwl_2017
+cred = cnx_params.wwl_2018
 host = cred['host']
 db = cred['db']
-engine = pg.connect(host, 'postgres', db)
+engine = wwldb.connect(host, 'postgres', db)
 cursor = engine.connect()
-schema = pg.table_schema()
+schema = wwldb.table_schema(db)
 update_year = db.split('_')[-1]
-parcel_year = '2017'
+parcel_year = '2018'
 parcels = 'sca_shelby_parcels_{}'.format(parcel_year)
 zip_codes = ['38109','38107','38127','38002','38125','38112','38104','38106',
              '38120', '38115','38053','38138','38114','38108','38122','38018',
@@ -265,7 +268,6 @@ def sfcomm(geography):
               'col': col,
               'query': geog_key[geography],
               'parcels':parcels}
-
     q = """drop table if exists tract_sfla;\
     create temp table tract_sfla as \
     select t.geoid10, cast(sum(d.sfla) as float) as sfla \

@@ -308,12 +308,13 @@ def cleanup():
     Clean up database by dropping all temp tables
     """
     cursor.execute(("select table_name from information_schema.tables "
-                   "where substring(table_name, 1, 5) = 'temp_'"))
+                   "where substring(table_name, 1, 5) = 'temp_' "
+                   "and table_schema = '{}'".format(psql_schema)))
     tables = [t[0] for t in cursor.fetchall()]
     i = 0
     for table in tables:
         i += 1
-        cursor.execute("drop table {} cascade;".format(table))
+        cursor.execute("drop table {0}.{1} cascade;".format(psql_schema,table))
         #commit delete in batches of 300 to avoid shared memory lock
         if i % 300 == 0:
             db.commit()

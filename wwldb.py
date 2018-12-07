@@ -4,18 +4,36 @@ for the WhereWeLiveMidsouth.org web application.
 
 Usage:
     wwldb.py newdb <year>
-    wwldb.py update_json -db
+    wwldb.py update_json <database>
+    wwldb.py process_data <year> [--rerun]
+    wwldb.py create_summary <year>
+    wwldb.py calculate_change <from> <to>
+    wwldb.py export_summary <year>
+    wwldb.py build_legend <year>
 
 Options:
-    newdb               :create new project database and load data from previous year
-    update_json         :update all JSON objects in existing database to reflect any 
-                         changes to data
-    year                :Database year
-    -d, --database      :Name of the database used for connection parameters
+    create_summary       :rebuild summary tables prior to loading data
+    newdb                :create new project database and load data from previous year
+    update_json          :update all JSON objects in existing database to reflect any 
+                          changes to data
+    year                 :Database year
+    -d, --database       :Name of the database used for connection parameters
+    --rerun              :Run process_data again, skipping any other methods previously
+                          completed
+    calculate_change     :Calculate the percent change between specified years and add
+                          to summary_<geog>_chng table in public schema for <to> year
+                          database
+    export_summary       :export all summary tables in public schema to load into web
+                          application
+    build_legend         :calculate legend values
 
 Example:
     $ python wwldb.py newdb 2018
     $ python wwldb.py update_json livability_2017
+    $ python wwldb.py process_data 2018 
+    $ python wwldb.py process_data 2018 --rerun
+    $ python wwldb.py calculate_change 2016 2018
+    $ python wwldb.py build_legend 2018
 
 """
 
@@ -36,7 +54,7 @@ import os
 import pandas as pd
 import numpy as np
 from docopt import docopt
-
+import csv
 
 def make_new_db(year):
     """
@@ -125,7 +143,8 @@ def create_summary_tables():
     cursor = engine.connect()
     q = ("select distinct table_name from information_schema.columns "
             "where table_schema = 'geography'")
-    create =  ("create table public.summary_{0} as select t.geoid10, t.sqmiland, "
+    create =  ("drop table if exists summary_{0};"
+                "create table public.summary_{0} as select t.geoid10, t.sqmiland, "
                 "t.name10, t.acreland "
                 "from geography.{0} as t;"
                  "ALTER TABLE summary_{0} ADD COLUMN id SERIAL;"
@@ -367,26 +386,39 @@ def create_data_dict():
             writer.writerow([datadict[k]['units'], datadict[k]['field'],
                              datadict[k]['citation'], datadict[k]['field_desc']])
 
-def process_data(completed=None):
-    """need to create the streets_with_sdw view before processing begins
-    since it's needed by several of the tables"""
+def process_data(completed=False):
+    """
+    Populates all of the summary tables by calling each function in the `process_data.py`
+    module.
 
-#     streets_sdw = """create materialized view transportation.streets_with_sdw as \
-#                      select *, \
-#                         case when dynamap_id in (select distinct teleatlas_id
-#                         from transportation.mpo_sidewalks) then 'YES'
-#                             else 'NO'
-#                         end as sidewalk
-#                     from transportation .teleatlas_streets;
-#                     create unique index dynamap_id_idx on \
-#                             transportation.streets_with_sdw(dynamap_id);
-#                     CREATE INDEX streets_with_sdw_gix ON \
-#                             transportation.streets_with_sdw USING gist(wkb_geometry);"""
-#     cursor = connect('caeser-geo.memphis.edu', 'postgres')
-#     cursor.execute(streets_sdw)
+    Args:
+        completed (, optional) 
+    """
+
+    #check to see if streets_with_sdw view exists before proceeding
+    #because it's needed for a few of the calculations
+    os.chdir("/home/nate/dropbox-caeser/Data/CFGM/WWL/{}".format(year))
+    cursor = connect("caeser-geo.memphis.edu", "postgres", db)
+    try:
+        cursor.execute("select * from transportation.streets_with_sdw limit 1")
+    except:
+        streets_sdw = ("create materialized view transportation.streets_with_sdw as "
+                         "select *, "
+                            "case when dynamap_id in (select distinct teleatlas_id "
+                            "from transportation.mpo_sidewalks) then 'YES' "
+                                "else 'NO' "
+                            "end as sidewalk "
+                        "from transportation .teleatlas_streets; "
+                        "create unique index dynamap_id_idx on "
+                                "transportation.streets_with_sdw(dynamap_id);"
+                        "CREATE INDEX streets_with_sdw_gix ON "
+                                "transportation.streets_with_sdw USING gist(wkb_geometry);"
+                        )
+        cursor.execute(streets_sdw)
+ 
 
     import inspect
-    from ld import process_data
+    import process_data
     methods = inspect.getmembers(process_data)
 
     geographies = ['cen_county_2010', 'cen_msa_2013',
@@ -401,7 +433,7 @@ def process_data(completed=None):
                 # functions[inspect.getsourcelines(a)[1]] =  a.__name__
                 functions[inspect.getsourcelines(a)[1]] = a.func_name
 
-    complete = [] if not completed else completed
+    complete = [] if not completed else completed_processes(".")
     skip = ['broadband']
     for geography in geographies:
 #         try:
@@ -409,10 +441,10 @@ def process_data(completed=None):
         for k in sorted(functions.keys()):
             if not [functions[k], geography] in complete and \
                     functions[k] not in skip:
-                print '\t', functions[k]
                 getattr(process_data, functions[k])(geography)
                 with open('complete_vars.csv', 'a') as f:
-                    f.write(functions[k]+','+ geography+'\n')
+                    f.write(functions[k].replace('"', '')+','+ geography.replace('"', '')+'\n')
+                print '\t', functions[k]
 #                 complete.append([k, geography])
 #         except Exception as e:
 #             os.chdir('/home/vagrant/sharedworkspace/Projects/Current/HUD/LivabilityDashboard/Docs/wwl_docs/')
@@ -473,7 +505,7 @@ def build_legend_values(db_year):
     be used to build legend break values in the final application. Break values
     are determined by calculating equal count quantiles for 5 classes of values.
     """
-    engine = connect(host, 'postgres', db_year)
+    engine = connect(host, 'postgres', "livability_"+db_year)
 
     quintiles = [.2,.4,.6,.8,1.]
     q_tables = """select table_name from information_schema.tables where
@@ -558,11 +590,11 @@ def calculate_change(year1, year2):
         each variable name along with the percent change
     """
     #pd.set_eng_float_format(accuracy=2)
-    engine_1 = connect(host, 'postgres', year1)
-    engine_2 = connect(host, 'postgres', year2)
+    engine_1 = connect(host, 'postgres', "livability_"+year1)
+    engine_2 = connect(host, 'postgres', "livability_"+year2)
     #cursor_1 = engine_1.connect()
     #cursor_2 = engine_2.connect()
-    tbls = table_schema(year2, False)
+    tbls = table_schema("livability_"+year2, False)
     tbl_skip = ['legend_values', 'spatial_ref_sys', 'data_dictionary',
                 'data_dictionary_chng', 'data_sources']
     for tbl in tbls:
@@ -690,23 +722,37 @@ def update_wwl_json(db):
                     set csv = '{0}' where geographyid = {1}".format(j_val,gid)
         cnx.execute(update.replace('%','%%'))
 
-#def create_inventory():
-
-
-
-
+def main(args):
+    if args["newdb"]:
+        # year = args["<year>"]
+        make_new_db(year)
+    if args["process_data"]:
+        rerun = args["--rerun"]
+        process_data(rerun)
+    if args["create_summary"]:
+        create_summary_tables()
+    if args["calculate_change"]:
+        from_year = args["<from>"]
+        to_year = args["<to>"]
+        calculate_change(from_year, to_year)
+    if args["export_summary"]:
+        year = args["<year>"]
+        export_summary_tables(year)
+    if args["build_legend"]:
+        year = args["<year>"]
+        build_legend_values(year)
+    if args["update_json"]:
+        update_wwl_json(args["<database>"])
 
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    if args["newdb"]:
-        year = args["<year>"]
-        make_new_db(year)
-            
-
+    year = args["<year>"]
     WWL_DB = 'wwl-test'
     cred = cnx_params.wwl_2017
     host = cred['host']
-    db = cred['dbname']
+    db = "livability_{}".format(year)#cred['db']
+    main(args)
 
-
+else:
+    host = "caeser-geo.memphis.edu"
